@@ -77,9 +77,6 @@ class Custom_Nav_Walker extends Walker_Nav_Menu {
   }
 }
 
-/**
- * GitHub Theme Updater for Apex Hospital
- */
 
 add_filter('pre_set_site_transient_update_themes', 'apex_hospital_github_update');
 
