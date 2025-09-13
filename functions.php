@@ -77,7 +77,6 @@ class Custom_Nav_Walker extends Walker_Nav_Menu {
   }
 }
 
-
 add_filter('pre_set_site_transient_update_themes', 'apex_hospital_github_update');
 
 function apex_hospital_github_update($transient) {
@@ -85,10 +84,9 @@ function apex_hospital_github_update($transient) {
         return $transient;
     }
 
-    $theme_slug = 'apex-hospital'; // Theme folder name
+    $theme_slug = 'apex-hospital';
     $github_api = 'https://api.github.com/repos/sksinghofficial/apex-hospital/releases/latest';
 
-    // GitHub API request
     $response = wp_remote_get($github_api, array(
         'headers' => array('Accept' => 'application/vnd.github.v3+json')
     ));
@@ -100,15 +98,24 @@ function apex_hospital_github_update($transient) {
     $release = json_decode(wp_remote_retrieve_body($response));
 
     if (!empty($release->tag_name)) {
-        $new_version = ltrim($release->tag_name, 'v'); // e.g., v1.0.1 → 1.0.1
+        $new_version = ltrim($release->tag_name, 'v');
         $current_version = wp_get_theme($theme_slug)->get('Version');
 
         if (version_compare($current_version, $new_version, '<')) {
+            // Agar release me asset (zip file) hai to usko use karo
+            $package_url = '';
+            if (!empty($release->assets) && !empty($release->assets[0]->browser_download_url)) {
+                $package_url = $release->assets[0]->browser_download_url;
+            } else {
+                // fallback (not recommended, random folder issue hoga)
+                $package_url = $release->zipball_url;
+            }
+
             $transient->response[$theme_slug] = array(
                 'theme'       => $theme_slug,
                 'new_version' => $new_version,
                 'url'         => $release->html_url,
-                'package'     => $release->zipball_url
+                'package'     => $package_url
             );
         }
     }
