@@ -76,3 +76,45 @@ class Custom_Nav_Walker extends Walker_Nav_Menu {
       $output .= '</li>';
   }
 }
+
+/**
+ * GitHub Theme Updater for Apex Hospital
+ */
+
+add_filter('pre_set_site_transient_update_themes', 'apex_hospital_github_update');
+
+function apex_hospital_github_update($transient) {
+    if (empty($transient->checked)) {
+        return $transient;
+    }
+
+    $theme_slug = 'apex-hospital'; // Theme folder name
+    $github_api = 'https://api.github.com/repos/sksinghofficial/apex-hospital/releases/latest';
+
+    // GitHub API request
+    $response = wp_remote_get($github_api, array(
+        'headers' => array('Accept' => 'application/vnd.github.v3+json')
+    ));
+
+    if (is_wp_error($response)) {
+        return $transient;
+    }
+
+    $release = json_decode(wp_remote_retrieve_body($response));
+
+    if (!empty($release->tag_name)) {
+        $new_version = ltrim($release->tag_name, 'v'); // e.g., v1.0.1 → 1.0.1
+        $current_version = wp_get_theme($theme_slug)->get('Version');
+
+        if (version_compare($current_version, $new_version, '<')) {
+            $transient->response[$theme_slug] = array(
+                'theme'       => $theme_slug,
+                'new_version' => $new_version,
+                'url'         => $release->html_url,
+                'package'     => $release->zipball_url
+            );
+        }
+    }
+
+    return $transient;
+}
